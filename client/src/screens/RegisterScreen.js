@@ -1,40 +1,41 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { Text } from 'react-native-paper';
-import Background from '../components/Background';
-import Logo from '../components/Logo';
-import Header from '../components/Header';
-import Button from '../components/Button';
-import TextInput from '../components/TextInput';
-import BackButton from '../components/BackButton';
-import { theme } from '../core/theme';
-import { emailValidator } from '../helpers/emailValidator';
-import { passwordValidator } from '../helpers/passwordValidator';
-import { nameValidator } from '../helpers/nameValidator';
-import { numberValidator } from '../helpers/numberValidator';
+import React, { useState } from 'react'
+import { View, StyleSheet, TouchableOpacity } from 'react-native'
+import { Text } from 'react-native-paper'
+import Background from '../components/Background'
+import Logo from '../components/Logo'
+import Header from '../components/Header'
+import Button from '../components/Button'
+import TextInput from '../components/TextInput'
+import BackButton from '../components/BackButton'
+import { theme } from '../core/theme'
+import { emailValidator } from '../helpers/emailValidator'
+import { passwordValidator } from '../helpers/passwordValidator'
+import { nameValidator } from '../helpers/nameValidator'
+import { numberValidator } from '../helpers/numberValidator'
 
 export default function RegisterScreen({ navigation }) {
-  const [name, setName] = useState({ value: '', error: '' });
-  const [email, setEmail] = useState({ value: '', error: '' });
-  const [number, setNumber] = useState({ value: '', error: '' });
-  const [password, setPassword] = useState({ value: '', error: '' });
+  const [name, setName] = useState({ value: '', error: '' })
+  const [email, setEmail] = useState({ value: '', error: '' })
+  const [number, setNumber] = useState({ value: '', error: '' })
+  const [password, setPassword] = useState({ value: '', error: '' })
+  const [userType, setUserType] = useState('user') 
 
   const onSignUpPressed = async () => {
-    const nameError = nameValidator(name.value);
-    const emailError = emailValidator(email.value);
-    const numberError = numberValidator(number.value);
-    const passwordError = passwordValidator(password.value);
+    const nameError = nameValidator(name.value)
+    const emailError = emailValidator(email.value)
+    const numberError = numberValidator(number.value)
+    const passwordError = passwordValidator(password.value)
 
     if (emailError || passwordError || nameError || numberError) {
-      setName({ ...name, error: nameError });
-      setEmail({ ...email, error: emailError });
-      setNumber({ ...number, error: numberError });
-      setPassword({ ...password, error: passwordError });
-      return;
+      setName({ ...name, error: nameError })
+      setEmail({ ...email, error: emailError })
+      setNumber({ ...number, error: numberError })
+      setPassword({ ...password, error: passwordError })
+      return
     }
 
     try {
-      const response = await fetch('http://192.168.56.1:8080/user', {
+      const response = await fetch('https://abac-181-135-33-107.ngrok-free.app/user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -44,42 +45,71 @@ export default function RegisterScreen({ navigation }) {
           email: email.value,
           number: number.value,
           password: password.value,
+          type: userType,
         }),
-      });
+      })
 
-      if (response.status === 201) {
+      if (response.status === 200) {
         navigation.reset({
           index: 0,
           routes: [{ name: 'Dashboard' }],
-        });
+        })
       } else if (response.status === 400) {
-        const data = await response.json();
+        const data = await response.json()
         if (data.error === 'El correo electrónico ya está en uso.') {
           setEmail({
             ...email,
             error: 'Correo electrónico ya vinculado a una cuenta',
-          });
+          })
         } else if (data.error === 'El numero ya está en uso.') {
           setNumber({
             ...number,
             error: 'El número ya vinculado a una cuenta',
-          });
+          })
         }
+      } else if (response.status === 500) {
+        const data = await response.json()
+        setEmail({ ...email, value: data.error })
+        setPassword({ ...password, error: data.error })
+        console.log(data.error)
       } else {
-        setEmail({ ...email, error: 'Intentelo más tarde' });
-        setPassword({ ...password, error: 'Intentelo más tarde' });
+        const data = await response.json()
+        setEmail({ ...email, value: data.error })
+        setPassword({ ...password, error: data.error })
+        console.log(data.error)
       }
     } catch (error) {
-      setEmail({ ...email, error: 'Intentelo más tarde' });
-      setPassword({ ...password, error: 'Intentelo más tarde' });
+      setEmail({ ...email, error: `Intentelo más tarde` })
+      console.log(error.message)
+      setPassword({ ...password, error: 'Intentelo más tarde' })
     }
-  };
+  }
 
   return (
     <Background>
       <BackButton goBack={navigation.goBack} />
       <Logo />
       <Header>Crea una cuenta</Header>
+      <View style={styles.userTypeContainer}>
+        <TouchableOpacity
+          onPress={() => setUserType('user')}
+          style={[
+            styles.userTypeButton,
+            userType === 'user' && styles.selectedUserType,
+          ]}
+        >
+          <Text style={styles.userTypeButtonText}>Usuario</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setUserType('walker')}
+          style={[
+            styles.userTypeButton,
+            userType === 'walker' && styles.selectedUserType,
+          ]}
+        >
+          <Text style={styles.userTypeButtonText}>Paseador</Text>
+        </TouchableOpacity>
+      </View>
       <TextInput
         label="Nombre Completo"
         returnKeyType="next"
@@ -133,10 +163,30 @@ export default function RegisterScreen({ navigation }) {
         </TouchableOpacity>
       </View>
     </Background>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
+  userTypeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 20,
+  },
+  userTypeButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+  },
+  selectedUserType: {
+    backgroundColor: theme.colors.primary,
+    color: theme.colors.text,
+  },
+  userTypeButtonText: {
+    color: theme.colors.text,
+    fontWeight: 'bold',
+  },
   row: {
     flexDirection: 'row',
     marginTop: 4,
@@ -145,4 +195,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: theme.colors.primary,
   },
-});
+})

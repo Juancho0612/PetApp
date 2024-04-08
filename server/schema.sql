@@ -1,6 +1,5 @@
 CREATE DATABASE petApp_database;
 
-USE petApp_database;
 
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,

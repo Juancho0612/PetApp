@@ -1,8 +1,8 @@
-import React from 'react'
-import { Provider } from 'react-native-paper'
-import { NavigationContainer } from '@react-navigation/native'
-import { createStackNavigator } from '@react-navigation/stack'
-import { theme } from './src/core/theme'
+import React, { useEffect, useState } from 'react';
+import { Provider } from 'react-native-paper';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { theme } from './src/core/theme';
 import {
   StartScreen,
   LoginScreen,
@@ -12,16 +12,45 @@ import {
   MapScreen,
   ProfileScreen,
   DogWalkersScreen,
-} from './src/screens'
+} from './src/screens';
+import { LoginProvider } from './src/context/LoginContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ActivityIndicator, Colors } from 'react-native-paper';
 
-const Stack = createStackNavigator()
+const MyComponent = () => (
+  <ActivityIndicator animating={true} color={Colors.red800} />
+);
+const Stack = createStackNavigator();
 
 export default function App() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      try {
+        const jsonValue = await AsyncStorage.getItem('user');
+        const userData = jsonValue != null ? JSON.parse(jsonValue) : null;
+        setUser(userData);
+      } catch (error) {
+        console.error('Error reading user data from AsyncStorage:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkUser();
+  }, []);
+
+  if (loading) {
+    return <MyComponent />; 
+  }
+
   return (
     <Provider theme={theme}>
       <NavigationContainer>
         <Stack.Navigator
-          initialRouteName="StartScreen"
+          initialRouteName={user ? 'Dashboard' : 'StartScreen'}
           screenOptions={{
             headerShown: false,
           }}
@@ -30,9 +59,16 @@ export default function App() {
           <Stack.Screen name="LoginScreen" component={LoginScreen} />
           <Stack.Screen name="RegisterScreen" component={RegisterScreen} />
           <Stack.Screen name="Dashboard" component={Dashboard} />
-          <Stack.Screen name="MapScreen" component={MapScreen} />
-          <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
-          <Stack.Screen name="DogWalkersScreen" component={DogWalkersScreen} />
+          {user && (
+            <>
+              <Stack.Screen name="MapScreen" component={MapScreen} />
+              <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+              <Stack.Screen
+                name="DogWalkersScreen"
+                component={DogWalkersScreen}
+              />
+            </>
+          )}
           <Stack.Screen
             name="ResetPasswordScreen"
             component={ResetPasswordScreen}
@@ -40,18 +76,5 @@ export default function App() {
         </Stack.Navigator>
       </NavigationContainer>
     </Provider>
-  )
+  );
 }
-
-
-
-
-  // const [users, setUsers] = useState([]);
-  // useEffect(() => {
-  //   fetchData();
-  // }, []);
-  // async function fetchData() {
-  //   const response = await fetch("http://192.168.56.1:8080/users");
-  //   const data = await response.json();
-  //   setUsers(data);
-  // }

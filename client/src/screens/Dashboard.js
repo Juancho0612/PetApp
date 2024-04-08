@@ -18,16 +18,6 @@ export default function Dashboard({ navigation }) {
         <Logo />
         <Header>Inicio</Header>
         <Paragraph>Caminatas diarias para mantener a tu perro feliz y saludable</Paragraph>
-        <Button
-          mode="outlined"
-          onPress={() =>
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'StartScreen' }],
-            })
-          }>
-          Cerrar sesión
-        </Button>
       </Background>
       <View style={styles.bottomNavigation}>
         <TouchableOpacity

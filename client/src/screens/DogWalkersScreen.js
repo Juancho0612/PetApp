@@ -18,16 +18,7 @@ export default function DogWalkersScreen({ navigation }) {
         <Logo />
         <Header>Paseadores</Header>
         <Paragraph>Perfil de los paseadores de perros, Proxiamamente</Paragraph>
-        <Button
-          mode="outlined"
-          onPress={() =>
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'StartScreen' }],
-            })
-          }>
-          Cerrar sesión
-        </Button>
+        
       </Background>
       <View style={styles.bottomNavigation}>
         <TouchableOpacity

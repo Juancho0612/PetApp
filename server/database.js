@@ -28,7 +28,7 @@ export async function getUserByEmailAndPassword(email, password) {
 }
 export async function getUserByEmail(email) {
   const [row] = await pool.query(`SELECT * FROM users WHERE email = ?`, [
-    email,
+    email
   ]);
   return row[0];
 }
@@ -46,8 +46,7 @@ export async function getPets() {
   const [rows] = await pool.query(`SELECT * FROM pets`);
   return rows;
 }
-export async function createUser(name, email, number, password) {
-  const type = "user";
+export async function createUser(name, email, number, password, type) {
   const [result] = await pool.query(
     `INSERT INTO users(name, email, number, password, type) 
         VALUES(?,?, ?, ?, ?);`,

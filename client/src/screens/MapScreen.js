@@ -16,17 +16,6 @@ export default function MapScreen({ navigation }) {
         <Logo />
         <Header>Mapa</Header>
         <Paragraph>Mapa de localizacion de paseadores, Proxiamamente</Paragraph>
-        <Button
-          mode="outlined"
-          onPress={() =>
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'StartScreen' }],
-            })
-          }
-        >
-          Cerrar sesión
-        </Button>
       </Background>
       <View style={styles.bottomNavigation}>
         <TouchableOpacity
