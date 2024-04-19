@@ -8,6 +8,7 @@ import {
   createUser,
   getPets,
   getUserByNumber,
+  updateUserLocation,
 } from "./database.js";
 import cors from "cors";
 
@@ -76,6 +77,19 @@ app.post("/user", async (req, res) => {
 app.get("/pets", async (req, res) => {
   const pets = await getPets();
   res.status(200).send(pets);
+});
+
+app.put("/user/:id/location", async (req, res) => {
+  const userID = req.params.id;
+  const { latitude, longitude } = req.body;
+
+  try {
+    await updateUserLocation(userID, latitude, longitude);
+    res.status(200).send({ message: "Ubicación del usuario actualizada correctamente." });
+  } catch (error) {
+    console.error("Error al actualizar la ubicación del usuario:", error);
+    res.status(500).json({ error: "Error interno del servidor al actualizar la ubicación del usuario." });
+  }
 });
 app.listen(8080, () => {
   console.log("Server running on port 8080");

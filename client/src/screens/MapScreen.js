@@ -1,63 +1,161 @@
-import React from 'react'
-import { ScrollView, StyleSheet, View } from 'react-native'
-import { TouchableOpacity } from 'react-native-gesture-handler'
-import { Text } from 'react-native-paper'
-import Background from '../components/Background'
-import Logo from '../components/Logo'
-import Header from '../components/Header'
-import Paragraph from '../components/Paragraph'
-import Button from '../components/Button'
-import BackButton from '../components/BackButton'
-import { theme } from '../core/theme'
+import React, { useState, useEffect } from 'react';
+import { ScrollView, StyleSheet, View, ActivityIndicator } from 'react-native';
+import { Text } from 'react-native-paper';
+import MapView, { Marker } from 'react-native-maps';
+import * as Location from 'expo-location';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import { TouchableOpacity } from 'react-native-gesture-handler';
+import { theme } from '../core/theme';
+import UserModal from '../components/UserModal';
+const userImage = require('../assets/user.png');
+const personImage = require('../assets/persona.png');
+const walkerImage = require('../assets/walker.png');
+
 export default function MapScreen({ navigation }) {
+  const [location, setLocation] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState([]);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+
+  useEffect(() => {
+    const getPermissions = async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        console.log('Por favor activar permisos');
+        return;
+      }
+      let currentLocation = await Location.getCurrentPositionAsync({});
+      setLocation(currentLocation);
+      setLoading(false);
+      console.log(currentLocation);
+    };
+    const fetchData = async () => {
+      const userData = await getData();
+      // setUser(userData); // Esto no parece ser utilizado, considera si es necesario
+    };
+
+    fetchData();
+    getUsers();
+    getPermissions();
+  }, []);
+
+  const getData = async () => {
+    try {
+      const jsonValue = await AsyncStorage.getItem('user');
+      return jsonValue != null ? JSON.parse(jsonValue) : null;
+    } catch (e) {
+      console.error('Error al leer los datos:', e);
+    }
+  };
+
+  async function getUsers() {
+    try {
+      const response = await fetch(`https://1aad-181-135-33-107.ngrok-free.app/users`, {
+        method: 'GET',
+        mode: 'cors',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.status === 200) {
+        const usersData = await response.json();
+        const usersWithCoordinates = usersData.filter(user => user.latitude !== null && user.longitude !== null);
+        setUsers(usersWithCoordinates);
+      } else {
+        console.log('Error:', response.status, response.statusText);
+        throw new Error(`Server returned status ${response.status}: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  }
+
+  const toggleModal = (user) => {
+    setSelectedUser(user);
+    setModalVisible(!modalVisible);
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Background>
-        <Logo />
-        <Header>Mapa</Header>
-        <Paragraph>Mapa de localizacion de paseadores, Proxiamamente</Paragraph>
-      </Background>
+      <View style={styles.mapContainer}>
+        {loading ? (
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        ) : (
+          <MapView
+            style={styles.map}
+            initialRegion={{
+              latitude: location?.coords.latitude,
+              longitude: location?.coords.longitude,
+              latitudeDelta: 0.09,
+              longitudeDelta: 0.04,
+            }}
+          >
+            <Marker
+              coordinate={{
+                latitude: location?.coords.latitude,
+                longitude: location?.coords.longitude,
+              }}
+              image={personImage}
+            />
+            {users.map((user) => (
+              <Marker
+                key={user.id}
+                coordinate={{
+                  latitude: parseFloat(user.latitude),
+                  longitude: parseFloat(user.longitude),
+                }}
+                image={user.type === 'walker' ? walkerImage : userImage}
+                onPress={() => toggleModal(user)}
+              />
+            ))}
+          </MapView>
+        )}
+      </View>
       <View style={styles.bottomNavigation}>
-        <TouchableOpacity
-          style={styles.tab}
-          onPress={() => navigation.navigate('MapScreen')}
-        >
+        <TouchableOpacity style={styles.tab} onPress={() => navigation.navigate('MapScreen')}>
           <Text>Mapa</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.tab}
-          onPress={() => navigation.navigate('ProfileScreen')}
-        >
+        <TouchableOpacity style={styles.tab} onPress={() => navigation.navigate('ProfileScreen')}>
           <Text>Mi Perfil</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.tab}
-          onPress={() => navigation.navigate('DogWalkersScreen')}
-        >
+        <TouchableOpacity style={styles.tab} onPress={() => navigation.navigate('DogWalkersScreen')}>
           <Text>Paseadores</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.tab}
-          onPress={() => navigation.navigate('Dashboard')}
-        >
+        <TouchableOpacity style={styles.tab} onPress={() => navigation.navigate('Dashboard')}>
           <Text>Home</Text>
         </TouchableOpacity>
       </View>
+
+      <UserModal visible={modalVisible} user={selectedUser} onClose={() => setModalVisible(false)} />
     </ScrollView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  mapContainer: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  map: {
+    width: '100%',
+    height: '100%',
   },
   bottomNavigation: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignContent: 'center',
     width: '100%',
+    height: '5%',
     borderTopWidth: 1,
     borderTopColor: theme.colors.secondary,
     paddingBottom: 15,
@@ -70,4 +168,4 @@ const styles = StyleSheet.create({
     color: theme.colors.secondary,
     paddingTop: 10,
   },
-})
+});

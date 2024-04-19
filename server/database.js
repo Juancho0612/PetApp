@@ -46,13 +46,28 @@ export async function getPets() {
   const [rows] = await pool.query(`SELECT * FROM pets`);
   return rows;
 }
-export async function createUser(name, email, number, password, type) {
+export async function createUser(name, email, number, password, type, latitude, longitude) {
+
   const [result] = await pool.query(
-    `INSERT INTO users(name, email, number, password, type) 
-        VALUES(?,?, ?, ?, ?);`,
-    [name, email, number, password, type]
+    `INSERT INTO users(name, email, number, password, type, latitude, longitude) 
+        VALUES(?, ?, ?, ?, ?, ?, ?);`,
+    [name, email, number, password, type, latitude, longitude]
   );
   const userID = result.insertId;
   return getUserByID(userID);
 }
-getUsers();
+
+export async function updateUserLocation(userID, latitude, longitude) {
+  try {
+    await pool.query(
+      `UPDATE users 
+       SET latitude = ?, longitude = ?
+       WHERE id = ?`,
+      [latitude, longitude, userID]
+    );
+    console.log(`Ubicación actualizada para el usuario con ID: ${userID}`);
+  } catch (error) {
+    console.error("Error al actualizar la ubicación del usuario:", error);
+    throw error;
+  }
+}

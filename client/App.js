@@ -59,16 +59,14 @@ export default function App() {
           <Stack.Screen name="LoginScreen" component={LoginScreen} />
           <Stack.Screen name="RegisterScreen" component={RegisterScreen} />
           <Stack.Screen name="Dashboard" component={Dashboard} />
-          {user && (
-            <>
-              <Stack.Screen name="MapScreen" component={MapScreen} />
-              <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+          <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+          <Stack.Screen name="MapScreen" component={MapScreen} />
+              
               <Stack.Screen
                 name="DogWalkersScreen"
                 component={DogWalkersScreen}
               />
-            </>
-          )}
+          
           <Stack.Screen
             name="ResetPasswordScreen"
             component={ResetPasswordScreen}
