@@ -16,34 +16,78 @@ import {
 import { LoginProvider } from './src/context/LoginContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ActivityIndicator, Colors } from 'react-native-paper';
+import NetInfo from '@react-native-community/netinfo';
+import { updateUserStatus } from './src/services/api';
+import { AppState } from 'react-native';
 
 const MyComponent = () => (
   <ActivityIndicator animating={true} color={Colors.red800} />
 );
+
 const Stack = createStackNavigator();
 
 export default function App() {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [isOnline, setIsOnline] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const checkUser = async () => {
-      try {
-        const jsonValue = await AsyncStorage.getItem('user');
-        const userData = jsonValue != null ? JSON.parse(jsonValue) : null;
-        setUser(userData);
-      } catch (error) {
-        console.error('Error reading user data from AsyncStorage:', error);
-      } finally {
-        setLoading(false);
+    const handleAppStateChange = (nextAppState) => {
+      if (nextAppState === 'active') {
+        console.log('La aplicación regresó a primer plano');
+        setIsOnline(true);
+      } else {
+        console.log('La aplicación se puso en segundo plano');
+        setIsOnline(false);
       }
     };
 
-    checkUser();
+    AppState.addEventListener('change', handleAppStateChange);
+
+    return () => {
+      if(user){
+        AppState.removeEventListener('change', handleAppStateChange);
+      }
+      
+    };
   }, []);
 
-  if (loading) {
-    return <MyComponent />; 
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      setIsOnline(state.isConnected);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    // Simulando una carga asíncrona para obtener el usuario desde AsyncStorage
+    AsyncStorage.getItem('user').then((storedUser) => {
+      setUser(JSON.parse(storedUser));
+      setIsLoading(false); // Cuando se obtiene el usuario, isLoading se establece en false
+    });
+  }, []);
+
+  useEffect(() => {
+    if (user !== null) {
+      setIsLoading(true);
+      updateUserStatus(user.id, isOnline)
+        .then((response) => {
+          console.log('Estado actualizado:', response);
+        })
+        .catch((error) => {
+          console.error('Error al actualizar el estado:', error);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }
+  }, [user, isOnline]);
+
+  if (isLoading) {
+    return <MyComponent />;
   }
 
   return (
@@ -61,12 +105,10 @@ export default function App() {
           <Stack.Screen name="Dashboard" component={Dashboard} />
           <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
           <Stack.Screen name="MapScreen" component={MapScreen} />
-              
-              <Stack.Screen
-                name="DogWalkersScreen"
-                component={DogWalkersScreen}
-              />
-          
+          <Stack.Screen
+            name="DogWalkersScreen"
+            component={DogWalkersScreen}
+          />
           <Stack.Screen
             name="ResetPasswordScreen"
             component={ResetPasswordScreen}

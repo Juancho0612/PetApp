@@ -1,115 +1,96 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { Text } from 'react-native-paper';
-import Background from '../components/Background';
-import Logo from '../components/Logo';
-import Header from '../components/Header';
-import Button from '../components/Button';
-import TextInput from '../components/TextInput';
-import BackButton from '../components/BackButton';
-import { theme } from '../core/theme';
-import { emailValidator } from '../helpers/emailValidator';
-import { passwordValidator } from '../helpers/passwordValidator';
-import { nameValidator } from '../helpers/nameValidator';
-import { numberValidator } from '../helpers/numberValidator';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Location from 'expo-location';
+import React, { useState } from 'react'
+import { View, StyleSheet, TouchableOpacity } from 'react-native'
+import { Text } from 'react-native-paper'
+import Background from '../components/Background'
+import Logo from '../components/Logo'
+import Header from '../components/Header'
+import Button from '../components/Button'
+import TextInput from '../components/TextInput'
+import BackButton from '../components/BackButton'
+import { theme } from '../core/theme'
+import { emailValidator } from '../helpers/emailValidator'
+import { passwordValidator } from '../helpers/passwordValidator'
+import { nameValidator } from '../helpers/nameValidator'
+import { numberValidator } from '../helpers/numberValidator'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import * as Location from 'expo-location'
+import { registerUser } from '../services/api'
 
 export default function RegisterScreen({ navigation }) {
-  const [name, setName] = useState({ value: '', error: '' });
-  const [email, setEmail] = useState({ value: '', error: '' });
-  const [number, setNumber] = useState({ value: '', error: '' });
-  const [password, setPassword] = useState({ value: '', error: '' });
-  const [userType, setUserType] = useState('user');
+  const [name, setName] = useState({ value: '', error: '' })
+  const [email, setEmail] = useState({ value: '', error: '' })
+  const [number, setNumber] = useState({ value: '', error: '' })
+  const [password, setPassword] = useState({ value: '', error: '' })
+  const [userType, setUserType] = useState('user')
 
   const storeData = async (value) => {
     try {
-      const jsonValue = JSON.stringify(value);
-      await AsyncStorage.setItem('user', jsonValue);
+      const jsonValue = JSON.stringify(value)
+      await AsyncStorage.setItem('user', jsonValue)
     } catch (e) {
       // saving error
     }
-  };
+  }
 
   const onSignUpPressed = async () => {
-    const nameError = nameValidator(name.value);
-    const emailError = emailValidator(email.value);
-    const numberError = numberValidator(number.value);
-    const passwordError = passwordValidator(password.value);
+    const nameError = nameValidator(name.value)
+    const emailError = emailValidator(email.value)
+    const numberError = numberValidator(number.value)
+    const passwordError = passwordValidator(password.value)
 
     if (emailError || passwordError || nameError || numberError) {
-      setName({ ...name, error: nameError });
-      setEmail({ ...email, error: emailError });
-      setNumber({ ...number, error: numberError });
-      setPassword({ ...password, error: passwordError });
-      return;
+      setName({ ...name, error: nameError })
+      setEmail({ ...email, error: emailError })
+      setNumber({ ...number, error: numberError })
+      setPassword({ ...password, error: passwordError })
+      return
     }
 
     try {
-      // Obtener la ubicación del usuario
-      let { status } = await Location.requestForegroundPermissionsAsync();
+      let { status } = await Location.requestForegroundPermissionsAsync()
       if (status !== 'granted') {
-        console.log('Por favor activar permisos de ubicación');
-        return;
+        console.log('Por favor activar permisos de ubicación')
+        return
       }
-      let currentLocation = await Location.getCurrentPositionAsync({});
-      const latitude = currentLocation.coords.latitude;
-      const longitude = currentLocation.coords.longitude;
 
-      const response = await fetch('https://1aad-181-135-33-107.ngrok-free.app/user', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: name.value,
-          email: email.value,
-          number: number.value,
-          password: password.value,
-          type: userType,
-          latitude, // Agregar la latitud al cuerpo de la solicitud
-          longitude, // Agregar la longitud al cuerpo de la solicitud
-        }),
-      });
+      let currentLocation = await Location.getCurrentPositionAsync({})
+      const latitude = currentLocation.coords.latitude
+      const longitude = currentLocation.coords.longitude
 
-      if (response.status === 200) {
-        const user = await response.json();
-        storeData(user).then(
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Dashboard' }],
-          })
-        );
-      } else if (response.status === 400) {
-        const data = await response.json();
-        if (data.error === 'El correo electrónico ya está en uso.') {
-          setEmail({
-            ...email,
-            error: 'Correo electrónico ya vinculado a una cuenta',
-          });
-        } else if (data.error === 'El numero ya está en uso.') {
-          setNumber({
-            ...number,
-            error: 'El número ya vinculado a una cuenta',
-          });
-        }
-      } else if (response.status === 500) {
-        const data = await response.json();
-        setEmail({ ...email, value: data.error });
-        setPassword({ ...password, error: data.error });
-        console.log(data.error);
+      console.log(latitude + longitude)
+      const response = await registerUser(
+        name.value,
+        email.value,
+        number.value,
+        password.value,
+        userType,
+        latitude,
+        longitude
+      )
+
+      console.log(response)
+
+      if (response.error === 'El correo electrónico ya está en uso.') {
+        setEmail({
+          ...email,
+          error: 'Correo electrónico ya vinculado a una cuenta',
+        })
+      } else if (response.error === 'El numero ya está en uso.') {
+        setNumber({ ...number, error: 'El número ya vinculado a una cuenta' })
       } else {
-        const data = await response.json();
-        setEmail({ ...email, value: data.error });
-        setPassword({ ...password, error: data.error });
-        console.log(data.error);
+        const user = response
+        await storeData(user)
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Dashboard' }],
+        })
       }
     } catch (error) {
-      setEmail({ ...email, error: 'Inténtelo más tarde' });
-      console.log(error.message);
-      setPassword({ ...password, error: 'Inténtelo más tarde' });
+      setEmail({ ...email, error: 'Inténtelo más tarde' })
+      console.log(error.message)
+      setPassword({ ...password, error: 'Inténtelo más tarde' })
     }
-  };
+  }
 
   return (
     <Background>
@@ -175,7 +156,11 @@ export default function RegisterScreen({ navigation }) {
         errorText={password.error}
         secureTextEntry
       />
-      <Button mode="contained" onPress={onSignUpPressed} style={{ marginTop: 24 }}>
+      <Button
+        mode="contained"
+        onPress={onSignUpPressed}
+        style={{ marginTop: 24 }}
+      >
         Registro
       </Button>
       <View style={styles.row}>
@@ -185,7 +170,7 @@ export default function RegisterScreen({ navigation }) {
         </TouchableOpacity>
       </View>
     </Background>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -217,4 +202,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: theme.colors.primary,
   },
-});
+})

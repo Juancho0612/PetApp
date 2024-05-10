@@ -17,6 +17,7 @@ import Button from '../components/Button'
 import BackButton from '../components/BackButton'
 import { theme } from '../core/theme'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { updateUserStatus } from '../services/api'
 
 export default function ProfileScreen({ navigation }) {
   const [user, setUser] = useState(null)
@@ -39,6 +40,7 @@ export default function ProfileScreen({ navigation }) {
   }
   removeValue = async () => {
     try {
+      actualizarEstado(user.id, false);
       await AsyncStorage.removeItem('user')
     } catch (e) {
       // remove error
@@ -46,6 +48,19 @@ export default function ProfileScreen({ navigation }) {
 
     console.log('Done.')
   }
+  const actualizarEstado = (userId, onlineStatus) => {
+    if (userId) {
+      updateUserStatus(userId, onlineStatus)
+        .then((response) => {
+          console.log('Estado actualizado:', response);
+        })
+        .catch((error) => {
+          console.error('Error al actualizar el estado:', error);
+        });
+    } else {
+      console.log('ID de usuario no disponible');
+    }
+  };
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Background>

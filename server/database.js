@@ -46,12 +46,12 @@ export async function getPets() {
   const [rows] = await pool.query(`SELECT * FROM pets`);
   return rows;
 }
-export async function createUser(name, email, number, password, type, latitude, longitude) {
+export async function createUser(name, email, number, password, type, latitude, longitude,online_status) {
 
   const [result] = await pool.query(
-    `INSERT INTO users(name, email, number, password, type, latitude, longitude) 
-        VALUES(?, ?, ?, ?, ?, ?, ?);`,
-    [name, email, number, password, type, latitude, longitude]
+    `INSERT INTO users(name, email, number, password, type, latitude, longitude, online_status) 
+        VALUES(?, ?, ?, ?, ?, ?, ?, ?);`,
+    [name, email, number, password, type, latitude, longitude, online_status]
   );
   const userID = result.insertId;
   return getUserByID(userID);
@@ -68,6 +68,21 @@ export async function updateUserLocation(userID, latitude, longitude) {
     console.log(`Ubicación actualizada para el usuario con ID: ${userID}`);
   } catch (error) {
     console.error("Error al actualizar la ubicación del usuario:", error);
+    throw error;
+  }
+}
+
+export async function updateUserOnlineStatus(userID, onlineStatus) {
+  try {
+    await pool.query(
+      `UPDATE users 
+       SET online_status = ?
+       WHERE id = ?`,
+      [onlineStatus, userID]
+    );
+    console.log(`Estado de conexión actualizado para el usuario con ID: ${userID}`);
+  } catch (error) {
+    console.error("Error al actualizar el estado de conexión del usuario:", error);
     throw error;
   }
 }

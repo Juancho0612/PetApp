@@ -13,6 +13,7 @@ import { passwordValidator } from '../helpers/passwordValidator'
 import { LoginContext } from '../context/LoginContext'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as Location from 'expo-location'
+import { loginUser, updateLocation } from '../services/api'
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState({ value: '', error: '' })
@@ -35,21 +36,21 @@ export default function LoginScreen({ navigation }) {
     getPermissions()
   }, [])
 
-  async function fetchData(email, password) {
-    try {
-      const response = await fetch(
-        `https://1aad-181-135-33-107.ngrok-free.app/user/${email}/${password}`,
-        {
-          method: 'GET',
-          mode: 'cors',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      )
+  const onLoginPressed = async () => {
+    console.log("hola")
+    const emailError = emailValidator(email.value)
+    const passwordError = passwordValidator(password.value)
+    if (emailError || passwordError) {
+      setEmail({ ...email, error: emailError })
+      setPassword({ ...password, error: passwordError })
+      return
+    }
 
-      if (response.status === 200) {
-        const user = await response.json()
+    try {
+      const response = await loginUser(email.value, password.value); 
+      console.log("response: " + response)
+      if (response) {
+        const user = await response
         await storeData(user)
         await updateLocation(
           user.id,
@@ -64,41 +65,8 @@ export default function LoginScreen({ navigation }) {
         )
       }
     } catch (error) {
-      console.error('Error:', error)
-      setEmail({ ...email, error: 'Error al iniciar sesión' })
-      setPassword({ ...password, error: 'Error al iniciar sesión' })
+      console.error('Error al iniciar sesión:', error);
     }
-  }
-  async function updateLocation(userId, latitude, longitude) {
-    try {
-      await fetch(
-        `https://1aad-181-135-33-107.ngrok-free.app/user/${userId}/location`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            latitude,
-            longitude,
-          }),
-        }
-      )
-    } catch (error) {
-      console.error('Error:', error)
-    }
-  }
-
-  const onLoginPressed = () => {
-    const emailError = emailValidator(email.value)
-    const passwordError = passwordValidator(password.value)
-    if (emailError || passwordError) {
-      setEmail({ ...email, error: emailError })
-      setPassword({ ...password, error: passwordError })
-      return
-    }
-
-    fetchData(email.value, password.value)
   }
 
   const storeData = async (value) => {
