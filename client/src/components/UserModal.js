@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet,View, Image, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Image, TouchableOpacity } from 'react-native';
 import { Modal, Text } from 'react-native-paper';
+import { useNavigation } from '@react-navigation/native';
 
 const starFilled = require('../assets/star.png');
 const starEmpty = require('../assets/star2.png');
@@ -8,6 +9,8 @@ const walker = require('../assets/walker.png');
 const userImage = require('../assets/user.png'); 
 
 const UserModal = ({ visible, user, onClose }) => {
+  const navigation = useNavigation();
+
   const rating = user?.score || 0;
   const totalStars = 5;
 
@@ -39,13 +42,25 @@ const UserModal = ({ visible, user, onClose }) => {
     return stars;
   };
 
+  const handleWalkerClick = () => {
+    if (user.type === 'walker') {
+      navigation.navigate('WalkerDetailsPage', { walkerId: user.id }); // Pasar el ID del walker a la página de detalles
+    }
+  };
+
   return (
     <Modal visible={visible} onDismiss={onClose} contentContainerStyle={styles.modalContainer}>
       <View style={styles.content}>
-        <Image source={user?.type === 'walker' ? walker : userImage} style={styles.avatar} />
+        <TouchableOpacity onPress={handleWalkerClick}>
+          <Image source={user?.type === 'walker' ? walker : userImage} style={styles.avatar} />
+        </TouchableOpacity>
         <Text style={styles.name}>{user?.name}</Text>
         <View style={styles.starContainer}>{renderStars()}</View>
-        {user?.type === 'walker' ? (<Text style={styles.price}>{`Precio por paseo: $${user?.pricePerWalk || 0} `}</Text>):(<Text style={styles.price}>{`Feliz con su mascota 💖`}</Text>)}
+        {user?.type === 'walker' ? (
+          <Text style={styles.price}>{`Precio por paseo: $${user?.pricePerWalk || 0} `}</Text>
+        ) : (
+          <Text style={styles.price}>{`Feliz con su mascota 💖`}</Text>
+        )}
         <TouchableOpacity onPress={onClose}>
           <Text style={styles.closeButton}>Cerrar</Text>
         </TouchableOpacity>

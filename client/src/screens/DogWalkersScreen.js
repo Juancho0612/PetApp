@@ -150,9 +150,14 @@ const DogWalkersScreen = ({ navigation }) => {
       latitude,
       longitude
     )
+    const handleWalkerClick = () => {
+      if (currentUser.type === 'user') {
+        navigation.navigate('WalkerDetailsPage', { walkerId: user.id }); // Pasar el ID del walker a la página de detalles
+      }
+    };
 
     return (
-      <TouchableOpacity key={user.id} style={styles.userCard}>
+      <TouchableOpacity key={user.id} style={styles.userCard} onPress={handleWalkerClick}>
         <View
           style={[
             styles.statusBar,

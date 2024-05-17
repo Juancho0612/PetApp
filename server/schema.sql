@@ -9,7 +9,30 @@ CREATE TABLE users (
     password VARCHAR(255)
 )
 
-
+CREATE TABLE reservations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    userId INT NOT NULL,
+    walkerId INT NOT NULL,
+    date DATE NOT NULL,
+    time TIME NOT NULL,
+    duration INT NOT NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('pending', 'confirmed', 'completed', 'cancelled') NOT NULL DEFAULT 'pending',
+    rating INT DEFAULT NULL,
+    review TEXT DEFAULT NULL,
+    FOREIGN KEY (userId) REFERENCES users(id),
+    FOREIGN KEY (walkerId) REFERENCES users(id)
+);
+CREATE TABLE ratings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    userId INT,
+    walkerId INT,
+    rating INT,
+    comment TEXT,
+    date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (userId) REFERENCES users(id),
+    FOREIGN KEY (walkerId) REFERENCES users(id)
+);
 CREATE TABLE pets (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255),

@@ -7,9 +7,16 @@ import {
   getUsers,
   createUser,
   getPets,
+  getUserReservations,
   getUserByNumber,
   updateUserLocation,
   updateUserOnlineStatus,
+  updateUserDetails,
+  addRatingAndReview,
+  updateReservationStatus,
+  createReservation,
+  getWalkerReservations,
+  updateWalkerScore,
 } from "./database.js";
 import cors from "cors";
 
@@ -31,7 +38,26 @@ app.get("/user/:id", async (req, res) => {
   res.status(200).send(user);
 });
 
+app.get("/user/reservations/:id", async (req, res) => {
+  try {
+    const reservations = await getUserReservations(req.params.id);
 
+    res.status(200).send(reservations);
+  } catch (error) {
+    console.error('Error al obtener las reservas del usuario:', error);
+    res.status(500).json({ error: 'Error interno del servidor al obtener las reservas del usuario.' });
+  }
+});
+app.get("/user/walker/reservations/:id", async (req, res) => {
+  try {
+    const reservations = await getWalkerReservations(req.params.id);
+
+    res.status(200).send(reservations);
+  } catch (error) {
+    console.error('Error al obtener las reservas del paseador:', error);
+    res.status(500).json({ error: 'Error interno del servidor al obtener las reservas del paseador.' });
+  }
+});
 app.get("/user/:email/:password", async (req, res) => {
   
   try {
@@ -105,6 +131,67 @@ app.put("/user/:id/location", async (req, res) => {
   } catch (error) {
     console.error("Error al actualizar la ubicación del usuario:", error);
     res.status(500).json({ error: "Error interno del servidor al actualizar la ubicación del usuario." });
+  }
+});
+app.put('/user/:id', async (req, res) => {
+  const userID = req.params.id;
+  const { name, email, number } = req.body;
+
+  try {
+    await updateUserDetails(userID, name, email, number);
+    res.status(200).send({ message: 'Usuario actualizado correctamente.' });
+  } catch (error) {
+    console.error('Error al actualizar el usuario:', error);
+    res.status(500).json({ error: 'Error interno del servidor al actualizar el usuario.' });
+  }
+});
+//reservation
+app.post("/reservations", async (req, res) => {
+  const { userId, walkerId, date, time, duration } = req.body;
+
+  try {
+    const reservationId = await createReservation(userId, walkerId, date, time, duration);
+    res.status(200).json({ id: reservationId, message: 'Reserva creada exitosamente.' });
+  } catch (error) {
+    console.error('Error creando reserva:', error);
+    res.status(500).json({ error: 'Error interno del servidor al crear la reserva.' });
+  }
+});
+
+app.put("/reservations/:id", async (req, res) => {
+  const reservationId = req.params.id;
+  const { status } = req.body;
+
+  try {
+    await updateReservationStatus(reservationId, status);
+    res.status(200).json({ message: 'Estado de la reserva actualizado correctamente.' });
+  } catch (error) {
+    console.error('Error actualizando estado de la reserva:', error);
+    res.status(500).json({ error: 'Error interno del servidor al actualizar el estado de la reserva.' });
+  }
+});
+app.put("/user/walkers/:id/score", async (req, res) => {
+  const walkerId = req.params.id;
+  const { score } = req.body;
+
+  try {
+    await updateWalkerScore(walkerId, score);
+    res.status(200).json({ message: "Puntaje del paseador actualizado correctamente." });
+  } catch (error) {
+    console.error("Error al actualizar el puntaje del paseador:", error);
+    res.status(500).json({ error: "Error interno del servidor al actualizar el puntaje del paseador." });
+  }
+});
+app.post("/reservations/:id/reviews", async (req, res) => {
+  const reservationId = req.params.id;
+  const { rating, review } = req.body;
+
+  try {
+    await addRatingAndReview(reservationId, rating, review);
+    res.status(200).json({ message: 'Reseña agregada correctamente.' });
+  } catch (error) {
+    console.error('Error agregando reseña:', error);
+    res.status(500).json({ error: 'Error interno del servidor al agregar la reseña.' });
   }
 });
 app.listen(8080, () => {
